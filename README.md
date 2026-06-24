@@ -1,140 +1,79 @@
-# Peblo AI Story Buddy & Quiz Component
+# Peblo AI Story Buddy - Interactive Learning Playground
 
-Peblo is an AI-powered learning playground built for children aged 5–12. This single-screen Flutter application demonstrates the core integration of the **Raga** (storytelling) and **Vidya** (quiz) worlds, providing a dynamic, performant, and child-first interactive audio story and comprehension quiz experience.
-
----
-
-## 1. Why Flutter Was Chosen
-Flutter was selected for the Peblo Mobile App based on several strategic advantages:
-* **Single Codebase, Cross-Platform**: Enables rapid deployment across both Android and iOS from a single Dart codebase.
-* **Declarative UI**: Streamlines building highly responsive, state-driven interfaces suited for modern mobile design patterns.
-* **High-Performance Animation Engine**: Leverages Skia/Impeller graphics pipelines to achieve 60fps animations (confetti, card shaking, custom mascot handoffs) seamlessly on budget mobile hardware.
-* **Dart's Type Safety & Sound Null Safety**: Restricts runtime errors and layout crashes, which is critical when launching apps for young, independent learners.
-* **Strong Ecosystem**: Robust packages for Text-to-Speech, audio playback, haptics, and Lottie animations are ready-to-use.
+Peblo is an AI-powered interactive learning playground built for children aged 5–12. This single-screen Flutter application showcases the seamless integration of the **Raga** (Storytelling) and **Vidya** (Quiz) worlds. It delivers a performant, child-first, offline-capable narration and comprehension quiz experience using state-driven UI interactions.
 
 ---
 
-## 2. Audio to Quiz State Handoff
-The transition from the narrative audio state to the active quiz state is controlled using Riverpod state provider listeners. 
-* **State Mapping**: 
-  - `AudioNotifier` manages the `AudioState` (`idle`, `preparing`, `playing`, `completed`, `error`).
-  - `QuizNotifier` manages the `QuizState` (`hidden`, `revealing`, `awaitingAnswer`, `wrong`, `correct`).
-* **Handoff Logic**: In [story_buddy_screen.dart](file:///d:/Flutter/flutter dev/projects/peblo_ai/lib/features/story_buddy/presentation/screens/story_buddy_screen.dart), a widget-level listener (`ref.listen<AudioState>`) tracks state changes:
-  ```dart
-  ref.listen<AudioState>(audioStateProvider, (prev, next) {
-    if (next == AudioState.completed) {
-      ref.read(quizStateProvider.notifier).revealQuiz();
-      ref.read(buddyStateProvider.notifier).setPointing();
-    }
-  });
-  ```
-  Once `AudioState.completed` is detected, the quiz slides up into view and the mascot bobs, transitioning from Raga to Vidya pointing to the quiz options.
+## 📱 App Walkthrough & Visuals
+
+Here is the visual flow of the application showing the transitions from storytelling to the final mastery celebration screen:
+
+| 📖 Story Reading & Audio | ❓ Interactive Quiz Screen | 🎉 Final Success Celebration |
+| :---: | :---: | :---: |
+| ![Story View](assets/images/screenshot1.jpeg) | ![Quiz View](assets/images/screenshot2.jpeg) | ![Celebration View](assets/images/screenshot3.jpeg) |
 
 ---
 
-## 3. Data-Driven Quiz Architecture
-The quiz rendering engine is completely dynamic and generic, ensuring no questions, option lists, or answers are hardcoded:
-* **JSON Schema**: Reads from a standard JSON data contract:
-  ```json
-  {
-    "question": "What colour was Pip the Robot's lost gear?",
-    "options": ["Red", "Green", "Blue", "Yellow"],
-    "answer": "Blue",
-    "hint": "Think about what colour the sky is!"
-  }
-  ```
-* **Parsing**: Deserialized by `QuizModel.fromJson()` which incorporates validation guards checking that `options.length` falls strictly between `3` and `5` items.
-* **Rendering**: Adapts option buttons dynamically using a `ListView.builder` over the parsed options.
-* **Evaluation**: Validation compares values (`selectedOption == answer`) rather than static indexes, supporting option shuffling or content additions without structural changes.
+## ✨ Key Features & Implementation
+
+### 1. Unified State Flow & Handoff
+- **Storytelling to Quiz transition**: Managed reactively via Riverpod providers. When the narration ends, `AudioState` transitions to `completed`, automatically triggering a slide-up transition of the interactive quiz card and changing the mascot's state from Raga (storyteller) to Vidya (quiz guide).
+- **Dynamic Character States**: Mascots respond dynamically with custom bounce, rock, and point animations mapped to current user actions (reading, listening, choosing options, or celebrating).
+
+### 2. High-Fidelity Studio Audio
+- **Saved Audio Integration**: Built using pre-recorded high-fidelity voice acting assets to provide premium narrative tone and question delivery without relying on robotic TTS engines.
+- **Precise Timing Tracking**: The audio player tracks playback position down to the second, automatically highlighting the active paragraph or scrolling to follow the narrative flow.
+
+### 3. Professional Success Celebration Redesign
+- **Mockup Accuracy**: Redesigned the success celebration card to match premium designs, adding:
+  - An overlapping gradient ribbon banner ("✦ Amazing! ✦").
+  - A floating "Story Explorer!" badge with a circular book icon.
+  - A clean, soft purple encouragement pill with dual icons.
+  - An elevated premium gradient button ("Read Another Story!").
+- **Bottom Navigation Clearance**: Shifted and uplifted the success card upward to prevent overlap with the floating bottom navigation bar.
+- **Top Image Viewport Tuning**: Adjusted the background crop alignment to `Alignment.topCenter` so that the rabbit mascot character's ears and head are shown clearly without cropping.
 
 ---
 
-## 4. Remote Audio Caching Approach
-For premium narrations (such as ElevenLabs remote API calls), the application implements a resilient local caching layer:
-* **Cache Keying**: The caching service calculates a SHA-256 hash of the story text:
-  ```dart
-  final bytes = utf8.encode(storyText);
-  final digest = sha256.convert(bytes);
-  final cacheKey = digest.toString();
-  ```
-* **Lifecycle (7-day TTL)**: Checks if a local cache file exists in `path_provider`'s temporary folder. If it does, the app reads the modification timestamp. Files older than 7 days are automatically purged on checks.
-* **Offline Resiliency**: If a network fetch fails, timeout limit exceeds (8s), or the user is offline with no cached file, the system silently falls back to the device-native `flutter_tts` engine, hiding errors from children.
+## 🛠️ Technology Stack & Packages
+
+- **Core Framework**: Flutter (Dart) with sound null-safety.
+- **State Management**: [Riverpod (flutter_riverpod)](https://pub.dev/packages/flutter_riverpod) for robust, unidirectional, and easily testable state flow.
+- **Audio Playback**: [Just Audio](https://pub.dev/packages/just_audio) for precise stream tracking, low latency playback, and resource-efficient caching.
+- **Visuals & Effects**: [Confetti](https://pub.dev/packages/confetti) for celebratory blasts on correct answers, and [Lottie](https://pub.dev/packages/lottie) for smooth vector animations.
 
 ---
 
-## 5. Audio Loading and Failure Flow
-Narration states follow a strict state machine to handle errors without locking up the UI:
-
-```
-[ IDLE ] ──(tap CTA)──► [ PREPARING ] ──(native ready)──► [ PLAYING ] ──(finished)──► [ COMPLETED ]
-   ▲                           │                                │
-   │                           ▼ (engine fail / timeout)        ▼ (audio cut)
-   └─────────────────────── [ ERROR ] ◄─────────────────────────┘
-```
-
-* **Preparing State**: The button disables and shows a spinner with a *"Getting ready..."* label.
-* **Error Warning**: If native initialization fails or ElevenLabs times out, the app renders a warning card with:
-  - **Try Again**: Re-tries initialization and speech.
-  - **Read Myself**: Instantly forces the state to `completed`, sliding up the quiz and letting the child bypass audio issues as plain text.
-
----
-
-## 6. Performance Profiling
-During performance audits using Flutter DevTools:
-* **Frame Rendering**: Animations (confetti blasts, wrong-option card shakes, character transitions) execute at a stable **60fps** (under the 16.6ms frame budget).
-* **Rebuild Counts**: Isolated repaint scopes using `RepaintBoundary` around the Confetti and Buddy widgets ensure that static background layouts, story card typography, and headers skip canvas painting cycles.
-* **Isolates**: Large text formatting and JSON parsing operations run on background threads using Dart's `compute()` isolates to avoid UI thread jank.
-
----
-
-## 7. Budget Device Optimizations
-Optimized to execute smoothly on entry-level Android devices (~3GB RAM, MediaTek Snapdragon 400-series):
-* **Repaint Boundaries**: Wrap heavy animation widgets (`BuddyCharacter` and `ConfettiWidget`) to prevent paint tick propagation.
-* **Reduced Confetti Count**: Particle generation capped at `20` particles.
-* **Const Constructors**: Instantiated on all widgets with static attributes to reuse instances and reduce heap collection.
-* **Asset Optimization**: High-quality compressed WebP images restricted to `2x` assets to match typical budget 720p screens.
-* **APK Size Reduction**: Built using `--split-per-abi` and `--strip-debug` configurations to keep final download packages under `25MB`.
-
----
-
-## 8. AI Usage Transparency
-* **Where AI was used**: Assisted in creating the custom 600ms dual-curve `AnimatedSwitcher` offsets for character handoffs, and designing the custom speech bubble `CustomPainter` vector shapes.
-* **Rejected Suggestion**: An AI suggestion to download remote Lottie animations dynamically was rejected. It introduced layout glitches on slow Tier-3 internet connections. We implemented local, offline state-driven PNG assets instead.
-* **Resolved Issue**: Fixed a Riverpod listener exception where `ref.listen` triggered state modifications during active layout cycles by queueing transitions to fire after frame callbacks.
-
----
-
-## 9. Project Directory Structure
+## 📂 Project Directory Structure
 
 ```
 lib/
-├── main.dart                      # App entry point (wraps tree in ProviderScope)
+├── main.dart                      # App entry point (wraps widget tree in ProviderScope)
 ├── app/
-│   └── peblo_app.dart             # MaterialApp, PebloTheme, and routes configuration
+│   └── peblo_app.dart             # MaterialApp setup, Custom PebloTheme, and routes
 ├── core/
 │   ├── constants/
 │   │   └── buddy_assets.dart      # Static asset paths for Raga and Vidya mascots
 │   ├── theme/
-│   │   └── peblo_theme.dart       # Colors, card styling, and touch-target button themes
+│   │   └── peblo_theme.dart       # Curated child-friendly color palettes and card decorators
 │   └── services/
-│       ├── tts_service.dart       # Native flutter_tts engine wrapper & lifecycles
-│       └── audio_cache_service.dart# Local file caching and SHA-256 keying
+│       └── tts_service.dart       # Core audio engine handling story narration, questions, and feedback
 └── features/
     └── story_buddy/
         ├── data/
         │   ├── models/
-        │   │   └── quiz_model.dart # Quiz model structure & dynamic assert checks
+        │   │   └── quiz_model.dart # Type-safe quiz question models with data validations
         │   └── repositories/
-        │       └── quiz_repository.dart# Static and remote JSON parsing pipelining
+        │       └── quiz_repository.dart# Handles reading and deserialization of the quiz dataset
         ├── presentation/
         │   ├── screens/
-        │   │   └── story_buddy_screen.dart# Screen layout, status rows, speech bubble shapes
+        │   │   └── story_buddy_screen.dart# Main layout, night-sky background, and navigation bar
         │   └── widgets/
-        │       ├── buddy_character.dart# Mascot switcher with 600ms handoff curves
-        │       ├── story_card.dart# Story text view with sound-reactive border pulsing
-        │       ├── read_button.dart# State-driven CTA button (spinner, wave)
-        │       ├── quiz_section.dart# Option tile listView builder & confetti triggers
-        │       └── option_tile.dart# Option button containing 300ms shake animations
+        │       ├── buddy_character.dart# Mascot character manager with 600ms animated handoffs
+        │       ├── story_card.dart# Narration text viewer with dynamic paragraph tracking
+        │       ├── read_button.dart# State-driven CTA button with loading states
+        │       ├── quiz_section.dart# Quiz rendering engine, confetti control, and success screen
+        │       └── option_tile.dart# Answer options with 300ms shake feedback on incorrect taps
         └── providers/
             ├── audio_provider.dart# Riverpod AudioState & AudioNotifier
             ├── quiz_provider.dart # Riverpod QuizStatus, QuizState, & QuizNotifier
@@ -143,12 +82,39 @@ lib/
 
 ---
 
-## Character Assets & Attribution
-The characters **Raga** (storytelling mascot) and **Vidya** (quiz mascot) featured
-in this app are original creations of **Peblo** (mypeblo.com).
-These assets are used with **explicit written permission** from the Peblo HR team,
-granted via email (hello@mypeblo.com) for the sole purpose of this
-Mobile App Developer Internship Challenge submission.
-All characters remain the exclusive intellectual property of Peblo.
-They are not for redistribution, commercial use, or reuse outside this assessment.
-> Raga: Peblo TV / Storytelling World | Vidya: Quiz World / Mastery
+## 🧠 Memory Management & Disposal Safeguards
+
+- **Disposal Safety**: Subscriptions to audio playback position streams and player states are explicitly stored in private `StreamSubscription` objects (`_positionSub`, `_stateSub`) and cancelled on playback stop or service disposal.
+- **Global Provider Refs**: Changed callback references inside streams to use Riverpod’s global class-level `Ref` rather than widget-level `WidgetRef`. This completely resolves runtime exceptions like `Bad state: Cannot use "ref" after the widget was disposed` that occur if the user navigates away or switches tabs during narration playback.
+
+---
+
+## 🎨 Mascot Attribution & Intellectual Property
+
+The characters **Raga** (the storytelling buddy mascot) and **Vidya** (the quiz buddy mascot) featured throughout this application are the original characters and exclusive intellectual property of **Peblo AI** (mypeblo.com). 
+
+These assets are used strictly with permission for the sole purpose of this Mobile App Developer assignment submission.
+
+---
+
+## 🚀 Getting Started & Running the App
+
+To run the project locally, ensure you have Flutter installed on your machine (`sdk: ^3.8.1` or higher).
+
+1. **Clone the Repository**:
+   ```bash
+   git clone <repository_url>
+   cd peblo_ai
+   ```
+
+2. **Clean and Install Dependencies**:
+   ```bash
+   flutter clean
+   flutter pub get
+   ```
+
+3. **Run the Application**:
+   ```bash
+   # Runs on connected mobile device or emulator
+   flutter run
+   ```
