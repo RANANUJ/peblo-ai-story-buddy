@@ -10,7 +10,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.5.1
-  flutter_tts: ^4.0.2
   confetti: ^0.7.0
   lottie: ^3.1.2
   just_audio: ^0.9.36
@@ -38,3 +37,5 @@ flutter:
     - assets/images/vidya_pointing.png
     - assets/images/vidya_sympathetic.png
     - assets/images/vidya_celebrating.png
+    - assets/images/background.png
+    - assets/audio/

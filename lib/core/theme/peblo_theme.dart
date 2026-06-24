@@ -10,6 +10,8 @@ class PebloTheme {
   static const Color offWhiteBg = Color(0xFFF8F4FF);
   static const Color successGreen = Color(0xFF43A047);
   static const Color errorRed = Color(0xFFE53935);
+  static const Color optionSelectedBg = Color(0xFFFFF2CC);
+  static const Color optionSelectedBorder = Color(0xFFFFB703);
 
   // Common Design Spec Values
   static const double borderRadius = 16.0;

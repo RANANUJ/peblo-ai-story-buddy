@@ -36,9 +36,9 @@ class BuddyCharacter extends ConsumerWidget {
 
         final isVidya = path.contains('vidya');
         if (isVidya) {
-          // Vidya Entrance: Slides up from y+30 to y=0 with fade-in (starts after 200ms)
+          // Vidya Entrance: Slides up from y+10% to y=0 with fade-in (starts after 200ms)
           final offsetAnimation = Tween<Offset>(
-            begin: const Offset(0.0, 30.0 / 160.0), // 30dp slide up offset based on 160dp widget height
+            begin: const Offset(0.0, 0.1), // 10% slide up offset
             end: Offset.zero,
           ).animate(CurvedAnimation(
             parent: animation,
@@ -58,87 +58,21 @@ class BuddyCharacter extends ConsumerWidget {
             ),
           );
         } else {
-          // Raga Exit: Scales down to 0.6, slides left (dx: -20), and fades out (completes in 200ms)
-          final offsetAnimation = Tween<Offset>(
-            begin: const Offset(-20.0 / 160.0, 0.0), // -20dp slide left offset
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: const Interval(0.0, 0.33, curve: Curves.easeIn), // Runs for the first 200ms
-          ));
-
-          final scaleAnimation = Tween<double>(
-            begin: 0.6,
-            end: 1.0,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: const Interval(0.0, 0.33, curve: Curves.easeIn),
-          ));
-
-          final fadeAnimation = CurvedAnimation(
-            parent: animation,
-            curve: const Interval(0.0, 0.33, curve: Curves.easeIn),
-          );
-
-          return SlideTransition(
-            position: offsetAnimation,
-            child: ScaleTransition(
-              scale: scaleAnimation,
-              child: FadeTransition(
-                opacity: fadeAnimation,
-                child: child,
-              ),
-            ),
+          // Raga Exit: Fades out in place (crossfade) to prevent exposing background gaps on the right
+          return FadeTransition(
+            opacity: animation,
+            child: child,
           );
         }
       },
       child: Image.asset(
         assetPath,
         key: ValueKey(assetPath),
-        height: 160,
-        fit: BoxFit.contain,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
       ),
     );
-
-    if (isCorrect) {
-      // PRD Section 16.4 & 9.5: Add small Raga in the corner giving thumbs up during correct answer celebration
-      return RepaintBoundary(
-        child: SizedBox(
-          width: 200,
-          height: 160,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              mainCharacter, // Vidya celebrating
-              Positioned(
-                bottom: -8,
-                right: -24,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.elasticOut,
-                  builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: value,
-                      child: Opacity(
-                        opacity: value.clamp(0.0, 1.0),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: Image.asset(
-                    RagaAssets.waveBye, // Raga waving / thumbs up
-                    height: 64,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
 
     return RepaintBoundary(
       child: mainCharacter,

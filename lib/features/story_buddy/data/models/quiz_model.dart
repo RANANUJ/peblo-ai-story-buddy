@@ -1,30 +1,30 @@
 class QuizModel {
+  final int id;
   final String question;
-  final List<String> options; // 3, 4, or 5 items
+  final List<String> options;
   final String answer;
-  final String? hint; // Optional field for Whisper Hint Mode
+  final String hint;
 
   const QuizModel({
+    required this.id,
     required this.question,
     required this.options,
     required this.answer,
-    this.hint,
+    required this.hint,
   });
 
   factory QuizModel.fromJson(Map<String, dynamic> json) {
-    final optionsList = List<String>.from(json['options'] ?? []);
-
-    // Safety guard — PRD specifies 3 to 5 options only
+    final options = List<String>.from(json['options'] ?? []);
     assert(
-      optionsList.length >= 3 && optionsList.length <= 5,
-      'Quiz must have between 3 and 5 options',
+      options.length >= 3 && options.length <= 5,
+      'Quiz must have 3 to 5 options'
     );
-
     return QuizModel(
+      id: json['id'] as int,
       question: json['question'] as String,
-      options: optionsList,
+      options: options,
       answer: json['answer'] as String,
-      hint: json['hint'] as String?,
+      hint: json['hint'] as String,
     );
   }
 }
